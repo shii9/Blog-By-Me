@@ -1,5 +1,7 @@
 # Mastering FFUF: The Complete Guide to Web Fuzzing with FFUF (Fuzz Faster U Fool)
 
+![Mastering FFUF Banner](assets/ffuf_mastering.png)
+
 > **A complete guide — from directory brute-forcing to parameter mining, virtual host discovery, and autocalibration.**
 >
 > *Compiled by **SHIx9** (Sourov Hossen) • 17 min read • Jul 12, 2026*

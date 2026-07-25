@@ -1,5 +1,7 @@
 # curl: The Complete Reference (Beginner to Advanced)
 
+![Mastering cURL Banner](assets/curl_mastering.jpg)
+
 > **A complete reference — beginner fundamentals through bug-bounty tradecraft.**
 >
 > *Compiled from curl's official tutorial ([curl.se/docs/tutorial.html](https://curl.se/docs/tutorial.html)) and current bug-bounty field practice (July 2026).*
