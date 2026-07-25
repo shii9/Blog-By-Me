@@ -7,8 +7,8 @@ Welcome to my personal knowledge base! This repository serves as a centralized h
 ## 📝 Article Directory
 
 ### 🌐 Network & Command Line Utilities
-* [curl: The Complete Reference (Beginner to Advanced)](file:///e:/Download/Blog%20By%20Me/curl_mastering.md) - A comprehensive reference on `curl` covering fundamentals, flag reference, and bug-bounty tradecraft.
-* [Mastering FFUF: The Complete Guide to Web Fuzzing with FFUF](file:///e:/Download/Blog%20By%20Me/ffuf_mastering.md) - A complete reference and guide to web fuzzing with FFUF, covering installation, matchers, filters, autocalibration, and real-world methodologies.
+* [curl: The Complete Reference (Beginner to Advanced)](https://github.com/shii9/Blog-By-Me/blob/main/curl_mastering.md) - A comprehensive reference on `curl` covering fundamentals, flag reference, and bug-bounty tradecraft.
+* [Mastering FFUF: The Complete Guide to Web Fuzzing with FFUF](https://github.com/shii9/Blog-By-Me/blob/main/ffuf_mastering.md) - A complete reference and guide to web fuzzing with FFUF, covering installation, matchers, filters, autocalibration, and real-world methodologies.
 
 ---
 
