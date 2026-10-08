@@ -1,3 +1,5 @@
+![image1](image1)
+
 # Mastering find / -type f: The Complete Guide to File Discovery, Recon and Forensics on Linux
 
 *From a one-line file dump to SUID hunting, forensic timelines and integrity baselines. Every test, action and operator explained with a working example, organized the way the tool actually evaluates them.*
@@ -6,13 +8,16 @@
 
 Most people meet `find / -type f` as a way to dump every file on a system into a pipe and move on. That treats one of the most capable tools on a Unix machine as a slower `locate`.
 
-`find` is a tree walker with a small expression language. `find / -type f` is the simplest sentence in that language: start at the root, visit every entry, print the regular files. Everything else (size, age, permissions, ownership, hashing, running commands) is a predicate you chain onto that sentence. For a security researcher that means privilege escalation recon, incident response triage and integrity monitoring from one binary that ships on practically every Unix system.
+`find` is a tree walker with a small expression language. `find / -type f` is the simplest sentence in that language: start at the root, visit every entry, print the regular files.
+
+Everything else (size, age, permissions, ownership, hashing, running commands) is a predicate you chain onto that sentence. For a security researcher, that means privilege escalation recon, incident response triage and integrity monitoring from one binary that ships on practically every Unix system.
 
 This guide walks through it the way the tool actually works: how the expression is evaluated, how to survive running it against `/`, and where each test earns its place in a security workflow. Everything here is meant for systems you own or are authorized to assess.
 
 ## Scope, Conventions and Safety
 
-**Authorization.** Everything here is for systems you own, administer or have written permission to assess. The commands are read-only unless they say otherwise, but reading credential files or sweeping a production host without authorization can still break law and policy. When an assessment turns up secrets, report where they are, not what they say.
+> [!WARNING]
+> **Authorization required.** Everything here is for systems you own, administer or have written permission to assess. The commands are read-only unless they say otherwise, but reading credential files or sweeping a production host without authorization can still break law and policy. When an assessment turns up secrets, report where they are, not what they say.
 
 **Conventions.** Examples target GNU findutils 4.7 or newer on Linux and run in bash. Run as root for complete coverage of a host you administer, and as an ordinary user to see what a low-privilege attacker sees. The two outputs differ, and both are useful.
 
@@ -23,6 +28,38 @@ This guide walks through it the way the tool actually works: how the expression 
 - **Part III, Acting on results (15-17):** output, `-exec`, automation safety, and pairing find with other tools.
 - **Part IV, Security and incident response (18-22):** privilege-escalation recon, credentials, persistence, writable locations and an IR workflow.
 - **Part V, Reference (23-29):** related tools, performance, flag reference, methodology, query building, a cheat sheet and common mistakes.
+
+## Table of Contents
+
+- [01 · What find / -type f Actually Does](#01--what-find---type-f-actually-does)
+- [02 · Versions and Installation](#02--versions-and-installation)
+- [03 · Syntax and Evaluation Order](#03--syntax-and-evaluation-order)
+- [04 · File Types with -type](#04--file-types-with--type)
+- [05 · Taming the Root Filesystem](#05--taming-the-root-filesystem)
+- [06 · Errors Are Evidence: stderr, Exit Codes and Privileges](#06--errors-are-evidence-stderr-exit-codes-and-privileges)
+- [07 · Depth Control and Stopping Early](#07--depth-control-and-stopping-early)
+- [08 · Symlinks: -P, -H and -L](#08--symlinks--p--h-and--l)
+- [09 · Matching Names and Paths](#09--matching-names-and-paths)
+- [10 · Numeric Arguments: +n, -n and n](#10--numeric-arguments-n--n-and-n)
+- [11 · Size and Empty Files](#11--size-and-empty-files)
+- [12 · Time](#12--time)
+- [13 · Permissions and Ownership](#13--permissions-and-ownership)
+- [14 · Inodes, Hard Links and Filesystem Types](#14--inodes-hard-links-and-filesystem-types)
+- [15 · Actions and Safe Output](#15--actions-and-safe-output)
+- [16 · Automation Security: Races, sh -c and Safe Deletion](#16--automation-security-races-sh--c-and-safe-deletion)
+- [17 · Combining find with grep, xargs and Other Tools](#17--combining-find-with-grep-xargs-and-other-tools)
+- [18 · Security Use Cases](#18--security-use-cases)
+- [19 · Credential and Sensitive-File Discovery](#19--credential-and-sensitive-file-discovery)
+- [20 · Persistence Hunting: Cron, systemd and Startup Files](#20--persistence-hunting-cron-systemd-and-startup-files)
+- [21 · Writable Locations, Orphaned Files and Capabilities](#21--writable-locations-orphaned-files-and-capabilities)
+- [22 · Incident Response Workflow](#22--incident-response-workflow)
+- [23 · Related Tools](#23--related-tools)
+- [24 · Performance](#24--performance)
+- [25 · Full Flag Reference](#25--full-flag-reference)
+- [26 · Real Methodology: Putting It Together](#26--real-methodology-putting-it-together)
+- [27 · Building Queries in Layers](#27--building-queries-in-layers)
+- [28 · Command Cheat Sheet](#28--command-cheat-sheet)
+- [29 · Common Mistakes](#29--common-mistakes)
 
 ## 01 · What find / -type f Actually Does
 
@@ -147,7 +184,9 @@ wc -l results.txt errors.log
 sort errors.log | uniq -c | sort -rn | head
 ```
 
-The error log is a map of what you could not see: home directories you cannot traverse, hardened paths, and files that vanished mid-walk. `No such file or directory` on a live system is normal, especially under `/tmp` and `/proc`, and GNU find's `-ignore_readdir_race` silences it if you want it gone.
+The error log is a map of what you could not see: home directories you cannot traverse, hardened paths, and files that vanished mid-walk.
+
+`No such file or directory` on a live system is normal, especially under `/tmp` and `/proc`, and GNU find's `-ignore_readdir_race` silences it if you want it gone.
 
 **Exit codes.** find exits `0` only if every path was processed without error. One unreadable directory makes the exit code non-zero even when the results are complete for your purposes. In scripts, do not treat `find ... && next-step` as a success check on a live filesystem. Check the output, or tolerate specific errors.
 
@@ -161,7 +200,8 @@ diff suid_user.txt suid_root.txt
 
 Anything in the second list but not the first lives inside a directory the unprivileged account cannot traverse. That shows you what a low-privilege attacker cannot even enumerate, which is exactly the boundary a hardening review wants to confirm.
 
-When you use `sudo find`, the command runs with full privileges, and so does anything you attach with `-exec` or `-delete`.
+> [!CAUTION]
+> When you use `sudo find`, the command runs with full privileges, and so does anything you attach with `-exec` or `-delete`.
 
 ## 07 · Depth Control and Stopping Early
 
@@ -365,11 +405,14 @@ find is easy to use safely on your own laptop and surprisingly easy to turn into
 find /tmp/uploads -type f -mtime +1 -exec rm {} \;
 ```
 
-If the owner of `/tmp/uploads` can swap a directory for a symlink in the gap between the match and the `rm`, the privileged process can be steered into deleting files elsewhere. GNU's security notes recommend `-execdir`, and `-delete` over `-exec rm`, in shared writable trees, because they operate relative to the directory being processed instead of on full path strings. Prefer them, run the job as the least-privileged user that can do it, and avoid `-L` in trees other people can write to, since symlinks are what the attacker uses.
+If the owner of `/tmp/uploads` can swap a directory for a symlink in the gap between the match and the `rm`, the privileged process can be steered into deleting files elsewhere.
+
+GNU's security notes recommend `-execdir`, and `-delete` over `-exec rm`, in shared writable trees, because they operate relative to the directory being processed instead of on full path strings. Prefer them, run the job as the least-privileged user that can do it, and avoid `-L` in trees other people can write to, since symlinks are what the attacker uses.
 
 **`-execdir` has a precondition.** It refuses to run if `PATH` contains `.`, an empty component or any relative directory. Keep `PATH` to absolute, trusted directories in scripts.
 
-**Never splice filenames into shell text.** Filenames are attacker-controlled data. This turns them into code:
+> [!WARNING]
+> **Never splice filenames into shell text.** Filenames are attacker-controlled data. This turns them into code:
 
 ```
 # Dangerous: the filename becomes part of a shell command
@@ -383,7 +426,8 @@ In the safe form, the lone `sh` after the script fills `$0`, and every matched f
 
 **Leading dashes.** A file named `-rf` can masquerade as an option. Starting from `.` or an absolute path prefixes results with `./` or `/`, which defuses it. When names arrive through a pipe, end option parsing explicitly: `xargs -0 rm --`.
 
-**An unset variable can become the whole current directory.** GNU find with no starting point searches `.`, so this destroys the working directory when `$DIR` is empty:
+> [!WARNING]
+> **An unset variable can become the whole current directory.** GNU find with no starting point searches `.`, so this destroys the working directory when `$DIR` is empty:
 
 ```
 find $DIR -type f -delete
@@ -484,7 +528,8 @@ find -H /bin /sbin /usr/bin /usr/sbin -type f -exec sha256sum {} + 2>/dev/null |
 sha256sum -c hashes_baseline.txt 2>/dev/null | grep -v ': OK$'
 ```
 
-One caution that matters: if the host may be compromised, the `find`, `sha256sum` and libc on it are untrusted. Run trusted copies from read-only media, or mount the disk read-only on a clean machine.
+> [!CAUTION]
+> If the host may be compromised, the `find`, `sha256sum` and libc on it are untrusted. Run trusted copies from read-only media, or mount the disk read-only on a clean machine.
 
 ## 19 · Credential and Sensitive-File Discovery
 
