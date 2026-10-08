@@ -1,6 +1,6 @@
 # Mastering `find`: The Complete Guide to File Discovery, Recon and Forensics on Linux
 
-![Mastering `find` Banner](assets/find_mastering.png)
+![Banner for the Mastering find guide](assets/find_mastering.svg)
 
 > **A complete guide — from filesystem discovery and SUID hunting to forensic timelines, integrity baselines, and incident response.**
 >
